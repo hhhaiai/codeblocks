@@ -1,0 +1,118 @@
+/***************************************************************
+ * Name:      ThreadSearchViewManagerMessagesNotebook
+ * Purpose:   Implements the ThreadSearchViewManagerBase
+ *            interface to make the ThreadSearchView panel
+ *            managed by the Messages notebook.
+ * Author:    Jerome ANTOINE
+ * Created:   2007-07-19
+ * Copyright: Jerome ANTOINE
+ * License:   GPL
+ **************************************************************/
+
+
+#include <sdk.h> // Code::Blocks SDK
+#ifndef CB_PRECOMP
+    #include "configmanager.h"
+    #include "manager.h"
+#endif
+
+#include "ThreadSearchView.h"
+#include "ThreadSearchViewManagerMessagesNotebook.h"
+
+
+ThreadSearchViewManagerMessagesNotebook::~ThreadSearchViewManagerMessagesNotebook()
+{
+    delete m_Bitmap;
+}
+
+
+void ThreadSearchViewManagerMessagesNotebook::AddViewToManager()
+{
+    if ( m_IsManaged == false )
+    {
+        // Creates log image
+        const int uiSize = Manager::Get()->GetImageSize(Manager::UIComponent::InfoPaneNotebooks);
+        const int uiScaleFactor = Manager::Get()->GetUIScaleFactor(Manager::UIComponent::InfoPaneNotebooks);
+        const wxString imgFile = ConfigManager::GetDataFolder()
+                               + wxString::Format(_T("/resources.zip#zip:/images/%dx%d/findf.png"),
+                                                  uiSize, uiSize);
+        m_Bitmap = new wxBitmap(cbLoadBitmapScaled(imgFile, wxBITMAP_TYPE_PNG,
+                                                         uiScaleFactor));
+
+        // Adds log to C::B Messages notebook
+        CodeBlocksLogEvent evtShow(cbEVT_ADD_LOG_WINDOW, m_pThreadSearchView,
+                                   wxString(_T("Thread search")), m_Bitmap);
+        Manager::Get()->ProcessEvent(evtShow);
+
+        CodeBlocksLogEvent evtSwitch(cbEVT_SWITCH_TO_LOG_WINDOW, m_pThreadSearchView);
+        Manager::Get()->ProcessEvent(evtSwitch);
+
+        // Status update
+        m_IsManaged = true;
+        m_IsShown   = true;
+    }
+}
+
+void ThreadSearchViewManagerMessagesNotebook::RemoveViewFromManager()
+{
+    if ( m_IsManaged == true )
+    {
+        // Status update
+        m_IsManaged = false;
+        m_IsShown   = false;
+
+        // Removes ThreadSearch panel from C::B Messages notebook
+        // Reparent call to avoid m_pThreadSearchView deletion
+        CodeBlocksLogEvent evt(cbEVT_REMOVE_LOG_WINDOW, m_pThreadSearchView);
+        Manager::Get()->ProcessEvent(evt);
+        m_pThreadSearchView = nullptr;
+        delete m_Bitmap;
+        m_Bitmap = nullptr;
+    }
+}
+
+
+bool ThreadSearchViewManagerMessagesNotebook::ShowView(uint32_t flags)
+{
+    // m_IsManaged is updated in called methods
+    const bool show = ((flags & ShowViewFlags::Show) == ShowViewFlags::Show);
+    if (show)
+    {
+        if (m_IsManaged == true)
+        {
+            wxWindow *focused = nullptr;
+            if ((flags & ShowViewFlags::PreserveFocus) == ShowViewFlags::PreserveFocus)
+                focused = wxWindow::FindFocus();
+            CodeBlocksLogEvent evtShow(cbEVT_SHOW_LOG_MANAGER);
+            Manager::Get()->ProcessEvent(evtShow);
+            CodeBlocksLogEvent evtSwitch(cbEVT_SWITCH_TO_LOG_WINDOW, m_pThreadSearchView);
+            Manager::Get()->ProcessEvent(evtSwitch);
+            m_IsShown = true;
+
+            if (focused)
+                focused->SetFocus();
+        }
+        else
+        {
+            AddViewToManager();
+        }
+    }
+    else
+    {
+        RemoveViewFromManager();
+    }
+
+    return true;
+}
+
+
+bool ThreadSearchViewManagerMessagesNotebook::IsViewShown()
+{
+    return m_IsShown && IsWindowReallyShown((wxWindow*)m_pThreadSearchView);
+}
+
+
+void ThreadSearchViewManagerMessagesNotebook::Raise()
+{
+    m_pThreadSearchView->GetParent()->GetParent()->Raise();
+}

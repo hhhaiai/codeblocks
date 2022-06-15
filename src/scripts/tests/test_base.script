@@ -1,0 +1,247 @@
+
+
+//local made_tests = 0;
+//local passed_tests = 0;
+//local failed_tests = 0;
+////local sa = wxStopWatch();
+//local global_made_tests = 0;
+//local global_passed_tests = 0;
+//local global_failed_tests = 0;
+
+made_tests <- 0;
+passed_tests <- 0;
+failed_tests <- 0;
+global_made_tests <- 0;
+global_passed_tests <- 0;
+global_failed_tests <- 0;
+
+class script_test_base
+{
+    // Stores the last position. It only grows in a section by 4 characters.
+    // This makes it easier to read IMO.
+    lastTarget = 30;
+
+    function StartNewSection(title)
+    {
+        ::print("\n");
+        ::print("--------------- " + title + " ---------------\n");
+        lastTarget = 30;
+    }
+
+    function Run()
+    {
+    }
+
+    function error(message)
+    {
+        ::print("[ERROR] " + message);
+    }
+
+    function format_output(name, result)
+    {
+        local name_length = name.len();
+
+        local free_space = lastTarget - name_length;
+        while (free_space <= 0)
+        {
+            lastTarget += 4;
+            free_space = lastTarget - name_length;
+        }
+
+        local output = "Test: " + name;
+        for (local i = 0; i < free_space; i++)
+            output += ".";
+        output += result;
+        return output;
+    }
+
+    function passed(name)
+    {
+        //sa.Pause();
+        ::passed_tests++;
+        ::global_passed_tests++;
+        ::print(format_output(name,"PASSED")+ "\n");
+        //sa.Resume();
+    }
+
+    function made_passed(name)
+    {
+        ::global_made_tests++;
+        passed(name);
+    }
+
+    function failed(name, messageGot, messageNeeded)
+    {
+        //sa.Pause();
+        ::failed_tests++;
+        ::global_failed_tests++;
+        error(format_output(name, "FAILED\n"));
+        error("\tgot:    " + messageGot + "\n");
+        error("\tneeded: " + messageNeeded + "\n");
+        //sa.Resume();
+    }
+
+    function made_failed(name, message)
+    {
+        ::global_made_tests++;
+        ::failed_tests++;
+        ::global_failed_tests++;
+        error(format_output(name, "MADE-FAILED\n"));
+        error("\t" + message + "\n");
+    }
+
+    function clear_test_result()
+    {
+        lastTarget = 30;
+        ::made_tests = 0;
+        ::passed_tests = 0;
+        ::failed_tests = 0;
+        //sa.Start(0);
+    }
+
+    function clear_global_test_results()
+    {
+        ::global_made_tests = 0;
+        ::global_passed_tests = 0;
+        ::global_failed_tests = 0;
+    }
+
+    function print_global_test_result()
+    {
+        //sa.Pause();
+        ::print("\n");
+        ::print("Global executed tests: " + ::global_made_tests + "\n");
+        ::print("Global passed tests:   " + ::global_passed_tests + "\n");
+        ::print("Global failed tests:   " + ::global_failed_tests + "\n");
+        //::print("Time elapsed:   " + sa.Time() + "ms ("+ sa.TimeInMicro()+"us)\n");
+
+    }
+
+    function print_test_result()
+    {
+        //sa.Pause();
+        ::print("\n");
+        ::print("Executed tests: " + ::made_tests + "\n");
+        ::print("passed tests:   " + ::passed_tests + "\n");
+        ::print("failed tests:   " + ::failed_tests + "\n");
+        //::print("Time elapsed:   " + sa.Time() + "ms ("+ sa.TimeInMicro()+"us)\n");
+
+    }
+
+    function test_equal(name,to_test,result)
+    {
+        ::made_tests++;
+        ::global_made_tests++;
+        if(to_test == result)
+        {
+            passed(name);
+            return true;
+        }
+        else
+        {
+            failed(name, to_test , result);
+        }
+        return false;
+    }
+
+    function test_true(name,to_test)
+    {
+        ::made_tests++;
+        ::global_made_tests++;
+        if(to_test)
+        {
+            passed(name);
+            return true;
+        }
+        else
+        {
+            failed(name, to_test , "true");
+        }
+        return false;
+    }
+
+    function test_false(name,to_test)
+    {
+        ::made_tests++;
+        ::global_made_tests++;
+        if(!to_test)
+        {
+            passed(name);
+            return true;
+        }
+        else
+        {
+            failed(name, to_test, "false");
+        }
+        return false;
+    }
+
+    function test_type(name,to_test,type)
+    {
+        ::made_tests++;
+        ::global_made_tests++;
+        if(typeof to_test == typeof type)
+        {
+            passed(name);
+            return true;
+        }
+        else
+        {
+            failed(name, typeof to_test, typeof type);
+        }
+        return false;
+    }
+
+    /*function test_string(name,to_test,result)
+    {
+        ::print("hall");
+        ::made_tests++;
+        if(to_test.tostring() == result.tostring())
+        {
+            ::passed_tests++;
+            ::print("Test: "+name+"\t\t:PASSED\n");
+        } else {
+            ::failed_tests++;
+            ::error("Test: "+name+"\t\t:FAILED\n");
+        }
+    }*/
+
+    function test_string(name,to_test,result)
+    {
+        ::made_tests++;
+        ::global_made_tests++;
+
+        // By adding a white space at the end we make a cheap ass to string conversion
+        local tmp_string = to_test + " ";
+        local tmp_result = result + " ";
+
+        local i = 0;
+        local test_failed = false;
+        if (tmp_string.len() != tmp_result.len()) {
+            error("length mismatch: got " + (tmp_result.len() - 1) + " needed " + (tmp_string.len() - 1));
+            test_failed = true;
+        }
+        else
+        {
+            for (i=0; i < tmp_string.len() && i < tmp_result.len();i++)
+            {
+                if(tmp_string[i] != tmp_result[i])
+                {
+                    error("failed in pos " + i + " " + tmp_string[i] + " != " + tmp_result[i]);
+                    test_failed = true;
+                    break;
+                }
+            }
+        }
+
+        if (test_failed)
+        {
+            failed(name, "\"" + to_test + "\"", "\"" + result + "\" fail at pos " + i);
+            return false;
+        }
+
+        passed(name);
+        return true;
+    }
+
+};

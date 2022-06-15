@@ -1,0 +1,26 @@
+/*
+ * This file is part of the Code::Blocks IDE and licensed under the GNU General Public License, version 3
+ * http://www.gnu.org/licenses/gpl-3.0.html
+ */
+
+#ifndef PROJECTSIMPORTER_H
+#define PROJECTSIMPORTER_H
+
+#include "cbplugin.h" // the base class we 're inheriting
+
+class ProjectsImporter : public cbMimePlugin
+{
+    public:
+        ProjectsImporter();
+        ~ProjectsImporter() override;
+        bool HandlesEverything() const override { return false; }
+        bool CanHandleFile(const wxString& filename) const override;
+        int OpenFile(const wxString& filename) override;
+        void BuildMenu(wxMenuBar* menuBar) override;
+    private:
+        int LoadProject(const wxString& filename);
+        int LoadWorkspace(const wxString& filename);
+};
+
+#endif // PROJECTSIMPORTER_H
+

@@ -1,0 +1,124 @@
+
+/*
+ * This file is part of the Code::Blocks IDE and licensed under the GNU General Public License, version 3
+ * http://www.gnu.org/licenses/gpl-3.0.html
+ *
+ * $Revision$
+ * $Id$
+ * $HeadURL$
+ */
+
+// Script plugins must extend cbScriptPlugin
+
+Include(_("sdk_test.script"));
+Include(_("wx_test.script"));
+Include(_("xml_test.script"));
+
+class Scripting_TestPlugin extends cbScriptPlugin
+{
+    // mandatory to setup the plugin's info
+    constructor()
+    {
+        info = PluginInfo();
+        info.name = _T("Scripting_TestPlugin");
+        info.title = _T("Test the scripting engine of C::B");
+        info.version = _T("0.1a");
+        info.license = _T("GPL");
+    }
+
+    // optional to create menubar items
+    function GetMenu()
+    {
+        local entries = ::wxArrayString();
+        entries.Add(_T("Plugins/Test Scripting/Test all"), 1);
+        entries.Add(_T("Plugins/Test Scripting/Test wx"), 1);
+        entries.Add(_T("Plugins/Test Scripting/Test sdk"), 1);
+        entries.Add(_T("Plugins/Test Scripting/Test xml"), 1);
+        return entries;
+    }
+
+    // optional to create context menu entries
+    /*function GetModuleMenu(who, data)
+    {
+
+    }*/
+
+    // optional to support ExecutePlugin(pluginNameString)
+    function Execute()
+    {
+        //::ShowMessage(_T("Start the test"));
+        //StartWxTest();
+        return 0;
+    }
+
+    // optional calback for menubar items clicking
+    function OnMenuClicked(index)
+    {
+		if (index == 0)
+		{
+			::ShowMessage(_T("Start the wx Test"));
+            StartWxTest();
+			::ShowMessage(_T("Start the sdk Test"));
+            StartSDKTest();
+			::ShowMessage(_T("Start the xml Test"));
+            StartXMLTest();
+		}
+        else if (index == 1)
+        {
+            ::ShowMessage(_T("Start the wx Test"));
+            StartWxTest();
+        }
+        else if (index == 2)
+        {
+            ::ShowMessage(_T("Start the sdk Test"));
+            StartSDKTest();
+        }
+		else if (index == 3)
+        {
+            ::ShowMessage(_T("Start the xml Test"));
+            StartXMLTest();
+        }
+
+    }
+
+    // optional calback for context menu items clicking
+    function OnModuleMenuClicked(index)
+    {
+
+    }
+
+    function StartTest()
+    {
+        StartSDKTest();
+        StartWxTest();
+    }
+
+    function StartWxTest()
+    {
+        local wx = wxTest();
+        wx.clear_global_test_results();
+        wx.Run();
+    }
+
+    function StartSDKTest()
+    {
+        local sdk = sdkTest();
+        sdk.clear_global_test_results();
+        sdk.Run();
+    }
+	
+	function StartXMLTest()
+    {
+        local xml = XMLTest();
+        xml.clear_global_test_results();
+        xml.Run();
+    }
+}
+
+// this call actually registers the script plugin with Code::Blocks
+RegisterPlugin(Scripting_TestPlugin());
+
+print("Plugin instance: " + GetPlugin(_T("Scripting_TestPlugin")) + "\n");
+
+// if you want to call this plugin's Execute() function, use this in a script:
+ExecutePlugin(_T("Scripting_TestPlugin"));
